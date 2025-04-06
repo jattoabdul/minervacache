@@ -130,7 +130,7 @@ func (mc *MinervaCache) Get(bucket string, key string, opts Options) ([]byte, er
 	// Check if the item is expired. This is an inline check for expired items. Always check for expired items in Get.
 	item := el.Value.(*cacheItem)
 	if !item.expiresAt.IsZero() && time.Now().After(item.expiresAt) {
-		mc.removeFromInsertOrder(el)
+		mc.deleteAndRemoveFromInsertOrder(el)
 		// TODO: Track the key expired item (miss) action for metrics.
 		return nil, ErrKeyExpired // Maybe just return key not found error?
 	}
@@ -147,15 +147,48 @@ func (mc *MinervaCache) Get(bucket string, key string, opts Options) ([]byte, er
 // Delete removes the key and value from the specified bucket. If the bucket is empty, it is deleted.
 // An error is returned if the operation fails. (Do we need the extra opts Options argument here?)
 func (mc *MinervaCache) Delete(bucket string, key string) error {
+	mc.mutex.Lock()
+	defer mc.mutex.Unlock()
+
+	// Check if the bucket exists
+	mcb, ok := mc.buckets[bucket]
+	if !ok {
+		// TODO: Track the bucket not found (miss) action for metrics.
+		return ErrBucketNotFound
+	}
+
+	// Check if the key exists in the bucket
+	el, ok := mcb[key]
+	if ok {
+		// TODO: Track the delete action for metrics.
+
+		// Remove the key from the bucket and update insertion order list. Remove bucket if empty as well.
+		mc.deleteAndRemoveFromInsertOrder(el)
+
+		return nil
+	}
+
+	// TODO: Track the key not found (miss) action for metrics.
 	return ErrKeyNotFound
 }
 
 // evict removes the oldest or newest or lru or mru item from the cache based on the eviction policy.
 func (mc *MinervaCache) evict(policy EvictionPolicy) {}
 
-// removeFromInsertOrder (del) removes the key from the bucket and updates the insertion order list.
+// deleteAndRemoveFromInsertOrder removes the key from the bucket and updates the insertion order list.
 // Used in Delete and evict and must be called with the mutex locked in the caller.
-func (mc *MinervaCache) removeFromInsertOrder(el *list.Element) {}
+func (mc *MinervaCache) deleteAndRemoveFromInsertOrder(el *list.Element) {
+	mc.order.Remove(el)
+
+	item := el.Value.(*cacheItem)
+	mcb := mc.buckets[item.bucket]
+	delete(mcb, item.key)
+
+	// Check if the bucket is empty after deletion
+	if len(mcb) == 0 {
+		delete(mc.buckets, item.bucket)
+	}
+}
 
 // startTTLCheck starts a goroutine that periodically checks for expired items in the cache.
 func (mc *MinervaCache) startTTLCheck() {}
