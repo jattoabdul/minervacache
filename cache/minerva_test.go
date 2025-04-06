@@ -44,7 +44,26 @@ func TestMinervaCache_Get(t *testing.T) {
 	assert.Equal(t, []byte("val1"), value, "expected value to be 'val1'")
 }
 
-func TestMinervaCache_Delete(t *testing.T) {}
+func TestMinervaCache_Delete(t *testing.T) {
+	// Test the Delete method of MinervaCache.
+	mc := NewMinervaCache(10, 0)
+	defer mc.Stop()
+
+	// Set a value in the cache.
+	err := mc.Set("bkt1", "key1", []byte("val1"), Options{})
+	assert.NoError(t, err, "expected no error on Set")
+
+	// Delete the value from the cache.
+	err = mc.Delete("bkt1", "key1")
+	assert.NoError(t, err, "expected no error on Delete")
+	// Try to get the deleted value.
+	_, err = mc.Get("bkt1", "key1", Options{})
+	assert.Error(t, err, "expected error on Get after Delete")
+	// Check if the bucket is empty after deletion.
+	bucket, ok := mc.buckets["bkt1"]
+	assert.True(t, ok, "expected bucket to exist")
+	assert.Equal(t, 0, len(bucket), "expected bucket to be empty after deletion")
+}
 
 func TestNoTTL(t *testing.T) {
 	mc := NewMinervaCache(10, 0)
