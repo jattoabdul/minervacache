@@ -110,7 +110,38 @@ func (mc *MinervaCache) Set(bucket string, key string, value []byte, opts Option
 // Get retrieves the value for the given key in the specified bucket.
 // An error is returned if the operation fails.
 func (mc *MinervaCache) Get(bucket string, key string, opts Options) ([]byte, error) {
-	return nil, ErrKeyNotFound
+	mc.mutex.Lock()
+	defer mc.mutex.Unlock()
+
+	// Check if the bucket exists
+	mcb, ok := mc.buckets[bucket]
+	if !ok {
+		// TODO: Track the bucket not found (miss) action for metrics.
+		return nil, ErrBucketNotFound
+	}
+
+	// Check if the key exists in the bucket
+	el, ok := mcb[key]
+	if !ok {
+		// TODO: Track the key not found (miss) action for metrics.
+		return nil, ErrKeyNotFound
+	}
+
+	// Check if the item is expired. This is an inline check for expired items. Always check for expired items in Get.
+	item := el.Value.(*cacheItem)
+	if !item.expiresAt.IsZero() && time.Now().After(item.expiresAt) {
+		mc.removeFromInsertOrder(el)
+		// TODO: Track the key expired item (miss) action for metrics.
+		return nil, ErrKeyExpired // Maybe just return key not found error?
+	}
+
+	// Update the last access time for LRU/MRU policies
+	if opts.EvictionPolicy == LRUEvictionPolicy || opts.EvictionPolicy == MRUEvictionPolicy {
+		mc.order.MoveToBack(el) // Move the element to the back of the list
+	}
+
+	// TODO: Track the keyInBucket found (hit) action for metrics.
+	return item.value, nil
 }
 
 // Delete removes the key and value from the specified bucket. If the bucket is empty, it is deleted.

@@ -9,6 +9,7 @@ import (
 var (
 	ErrCacheFull      = errors.New("cache is full")
 	ErrKeyNotFound    = errors.New("key not found")
+	ErrKeyExpired     = errors.New("key expired")
 	ErrBucketNotFound = errors.New("bucket not found")
 	ErrInvalidPolicy  = errors.New("invalid eviction policy")
 )
