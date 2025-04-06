@@ -55,7 +55,56 @@ func NewMinervaCache(capacity int, ttlCheckInterval time.Duration) *MinervaCache
 // Set sets the value for the given key in the specified bucket.
 // An error is returned if the operation fails.
 func (mc *MinervaCache) Set(bucket string, key string, value []byte, opts Options) error {
-	return ErrKeyNotFound
+	mc.mutex.Lock()
+	defer mc.mutex.Unlock()
+
+	// NB: If we were using options per method, maybe we should apply the options here and use some default values?
+	//options := Options{ EvictionPolicy: LRUEvictionPolicy }
+	//for _, opt := range opts {
+	//	if err := opt(&options); err != nil { return err }
+	//}
+
+	// Get or Create bucket if it doesn't exist
+	mcb := mc.getBucket(bucket)
+
+	// Create a new bucket item
+	expiresAt := time.Time{}
+	if opts.TTL > 0 { // If TTL is set, calculate the expiration time.
+		expiresAt = time.Now().Add(opts.TTL)
+	}
+
+	item := &cacheItem{
+		bucket:    bucket,
+		key:       key,
+		value:     value,
+		expiresAt: expiresAt,
+	}
+
+	// Check if the key already exists
+	if el, ok := mcb[key]; ok {
+		// Update existing key
+		el.Value = item
+
+		if opts.EvictionPolicy == LRUEvictionPolicy || opts.EvictionPolicy == MRUEvictionPolicy {
+			mc.order.MoveToBack(el) // Move the element to the back of the list
+		}
+
+		// TODO: Track update item action for metrics.
+
+		return nil
+	}
+
+	// Evict before inserting new key if the cache is full
+	if mc.order.Len() >= mc.capacity {
+		// Evict based on policy
+		mc.evict(opts.EvictionPolicy)
+	}
+
+	// Add the new item to the bucket and update insertion order list
+	el := mc.order.PushBack(item)
+	mcb[key] = el // Store the element in the bucket map
+
+	return nil
 }
 
 // Get retrieves the value for the given key in the specified bucket.
@@ -85,3 +134,13 @@ func (mc *MinervaCache) Stop() {}
 
 // checkExpiredItems checks for expired items in the cache and removes them.
 func (mc *MinervaCache) checkExpiredItems() {}
+
+// getBucket returns the bucket for the given key. If the bucket doesn't exist, it creates a new one.
+func (mc *MinervaCache) getBucket(bucket string) map[string]*list.Element {
+	mcb, ok := mc.buckets[bucket]
+	if !ok {
+		mcb = make(map[string]*list.Element)
+		mc.buckets[bucket] = mcb
+	}
+	return mcb
+}
