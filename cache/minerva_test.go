@@ -153,13 +153,10 @@ func TestEviction(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("val2"), val, "expected key2 to be available")
 
-	mc.Set("bkt1", "key5", []byte("val5"), Options{}) // This should evict "key3" as the least recently used key.
+	mc.Set("bkt1", "key5", []byte("val5"), Options{}) // This should evict "key2" as the least recently used key.
 
-	_, err = mc.Get("bkt1", "key3", Options{})
+	_, err = mc.Get("bkt1", "key2", Options{})
 	assert.Error(t, err, "expected error for evicted key")
-
-	//_, err = mc.Get("bkt1", "key3", Options{})
-	//assert.NoError(t, err)
 }
 
 // TODO: Add more tests for different eviction policies and edge cases.

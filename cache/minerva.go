@@ -85,8 +85,9 @@ func (mc *MinervaCache) Set(bucket string, key string, value []byte, opts Option
 		// Update existing key
 		el.Value = item
 
+		// Update the access time for LRU/MRU policies.
 		if opts.EvictionPolicy == LRUEvictionPolicy || opts.EvictionPolicy == MRUEvictionPolicy {
-			mc.order.MoveToBack(el) // Move the element to the back of the list
+			mc.order.MoveToBack(el) // Move the element to the back of the list since it was accessed.
 		}
 
 		// TODO: Track update item action for metrics.
@@ -135,9 +136,9 @@ func (mc *MinervaCache) Get(bucket string, key string, opts Options) ([]byte, er
 		return nil, ErrKeyExpired // Maybe just return key not found error?
 	}
 
-	// Update the last access time for LRU/MRU policies
+	// Update the last access time for LRU/MRU policies.
 	if opts.EvictionPolicy == LRUEvictionPolicy || opts.EvictionPolicy == MRUEvictionPolicy {
-		mc.order.MoveToBack(el) // Move the element to the back of the list
+		mc.order.MoveToBack(el) // Move the element to the back of the list since it was accessed.
 	}
 
 	// TODO: Track the keyInBucket found (hit) action for metrics.
@@ -173,7 +174,22 @@ func (mc *MinervaCache) Delete(bucket string, key string) error {
 }
 
 // evict removes the oldest or newest or lru or mru item from the cache based on the eviction policy.
-func (mc *MinervaCache) evict(policy EvictionPolicy) {}
+// It is called when the cache reaches its capacity and needs to evict an item.
+// The eviction policy is passed as an argument to determine which item to evict.
+// No locking is needed here, as the caller already locks the mutex.
+func (mc *MinervaCache) evict(policy EvictionPolicy) {
+	var el *list.Element
+
+	switch policy {
+	case MRUEvictionPolicy, NewestEvictionPolicy:
+		el = mc.order.Back() // MRU or Newest item
+	default:
+		el = mc.order.Front() // LRU or Oldest item or When no policy is set (None).
+	}
+
+	mc.deleteAndRemoveFromInsertOrder(el)
+	// TODO: Track the eviction action for metrics.
+}
 
 // deleteAndRemoveFromInsertOrder removes the key from the bucket and updates the insertion order list.
 // Used in Delete and evict and must be called with the mutex locked in the caller.
