@@ -18,17 +18,17 @@ Cache:
     - [x] Write unit tests for the cache
 
 Server:
-- [ ] Implement the gRPC server
-    - [ ] Implement the proto file for the cache operations (set, get, delete, stats)
-    - [ ] Implement the gRPC server and its handlers
-    - [ ] Write unit tests for the gRPC server
 - [ ] Implement the HTTP server
-    - [ ] Implement the endpoints for the cache operations (set, get, delete, stats)
-    - [ ] Implement the statistics endpoint
-    - [ ] Implement the Performance metrics collection (Prometheus?)
-    - [ ] Implement the health check endpoint
+    - [x] Implement the endpoints for the cache operations (set, get, delete, stats)
+    - [x] Implement the statistics endpoint
+    - [x] Implement the Performance metrics collection (Prometheus?)
+    - [x] Implement the health check endpoint
     - [ ] Implement the graceful shutdown
-- [ ] Write unit tests for the server
+    - [ ] Write unit tests for the HTTP server
+- [ ] Implement the gRPC server
+  - [ ] Implement the proto file for the cache operations (set, get, delete, stats)
+  - [ ] Implement the gRPC server and its handlers
+  - [ ] Write unit tests for the gRPC server
 
 Client:
 - [ ] Implement a client to test the gRPC server (Maybe a simple CLI client to test the servers)

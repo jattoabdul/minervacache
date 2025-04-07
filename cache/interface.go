@@ -82,6 +82,7 @@ type Cache interface {
 	//Stop()
 }
 
+// ParseOptionsFromRequest parses the options from the HTTP request.
 func ParseOptionsFromRequest(r *http.Request) (Options, error) {
 	ttl := r.URL.Query().Get("ttl")
 	if ttl == "" {
