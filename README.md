@@ -37,6 +37,9 @@ curl -X GET http://localhost:8080/cache/bucket1/key1
 
 # Delete a key
 curl -X DELETE http://localhost:8080/cache/bucket1/key1
+
+# Get statistics - as prometheus metrics
+ curl -X GET http://localhost:8080/stats
 ```
 
 ## gRPC Server
@@ -102,6 +105,9 @@ This means that the LRU and Newest policies are not strictly enforced.
 Normally, the expectation is that a cache uses the same eviction policy across all buckets in the cache.
 We could use two linked lists to keep track of the order of keys in each bucket, one for LRU/MRU and one for Newest/Oldest, but this would add complexity to the implementation.
 The cache does a background cleanup of expired keys, to avoid scanning the entire cache during normal operations. However, the Get operation always checks for expired keys, so the cache is always up to date.
+The cache stats are exposed as Prometheus metrics, allowing for easy monitoring of the cache's performance and usage.
+We are using the `prometheus` library to expose the metrics, and the `promhttp` library to serve the metrics over HTTP.
+We could use namespaced metrics to avoid collisions with other applications, but this is not strictly necessary for a simple cache and due to time constraints, we have not implemented this.
 
 ### Eviction Policies
 The cache supports four eviction policies:
