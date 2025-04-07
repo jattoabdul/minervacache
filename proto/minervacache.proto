@@ -1,0 +1,39 @@
+syntax = "proto3";
+package minervacache;
+
+option go_package = "github.com/jattoabdul/minervacache/proto";
+
+message GetRequest {
+    string bucket = 1;
+    string key = 2;
+}
+
+message GetResponse {
+    bytes value = 1;
+}
+
+message SetRequest {
+    string bucket = 1;
+    string key = 2;
+    bytes value = 3;
+    int32 ttl_ms = 4; // ttl in ms
+}
+
+message  SetResponse {
+  bool success = 1;
+}
+
+message DeleteRequest {
+    string bucket = 1;
+    string key = 2;
+}
+
+message DeleteResponse {
+    bool success = 1;
+}
+
+service MinervaCache {
+    rpc Get(GetRequest) returns (GetResponse) {}
+    rpc Set(SetRequest) returns (SetResponse) {}
+    rpc Delete(DeleteRequest) returns (DeleteResponse) {}
+}

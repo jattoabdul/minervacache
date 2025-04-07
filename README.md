@@ -7,7 +7,7 @@ The cache is limited to 255 keys total and provides gRPC & HTTP API access to ma
 
 ### HTTP Server
 ```bash
-# Install to $GOPATH/bin ( you may need to restart your shell for this to take effect)
+# Install to $GOPATH/bin (you may need to restart your shell for this to take effect)
 make install
 
 # Start HTTP server on localhost:8080
@@ -37,6 +37,28 @@ curl -X GET http://localhost:8080/cache/bucket1/key1
 
 # Delete a key
 curl -X DELETE http://localhost:8080/cache/bucket1/key1
+```
+
+## gRPC Server
+```bash
+# Install to $GOPATH/bin (if you have not already done so)
+make install
+
+# Start gRPC server on localhost:8080
+minervacache server --grpc
+```
+
+#### Example Usage (With REPL)
+```bash
+# Start the REPL client
+minervacache client
+
+> set key1 value1
+Usage: set <bucket> <key> <value> [ttl_ms]
+
+> set bucket1 key1 value1
+
+
 ```
 
 ### Docker
@@ -70,6 +92,19 @@ The cache supports four eviction policies:
 2. **Newest**: Removes the item that was most recently added to the cache
 3. **LRU** (Least Recently Used): Removes the item that hasn't been accessed for the longest time
 4. **MRU** (Most Recently Used): Removes the item that was most recently accessed
+
+### Development Notes:
+- To generate or regenerate the protobuf files after creating or changing the proto, you can use the following commands:
+```bash
+# Install the required tools
+brew install protobuf
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+# Generate the protobuf files
+make proto
+````
+
 
 ### Testing
 The cache is tested using unit tests for the cache operations.
