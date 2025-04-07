@@ -53,6 +53,34 @@ minervacache server
 
 ## Solution Approach
 
+Using a bucketed cache with a maximum of 255 keys, the cache is designed to be simple and efficient.
+The cache supports multiple buckets, and allows for different eviction policies and TTLs when getting or setting keys in a bucket.
+The cache is implemented as a map of buckets, where each bucket is a map of keys to values.
+The cache uses a linked list to keep track of the order of keys in each bucket, allowing for efficient eviction of keys based on the specified eviction policy.
+The cache also supports TTLs, allowing keys to expire after a specified time.
+A weird quirk of the cache is that it supports multiple eviction policies, but we are using a single linked list to keep track of the order of keys in each bucket.
+This means that the LRU and Newest policies are not strictly enforced.
+Normally, the expectation is that a cache uses the same eviction policy across all buckets in the cache.
+We could use two linked lists to keep track of the order of keys in each bucket, one for LRU/MRU and one for Newest/Oldest, but this would add complexity to the implementation.
+The cache does a background cleanup of expired keys, to avoid scanning the entire cache during normal operations. However, the Get operation always checks for expired keys, so the cache is always up to date.
+
+### Eviction Policies
+The cache supports four eviction policies:
+1. **Oldest**: Removes the item that was first added to the cache
+2. **Newest**: Removes the item that was most recently added to the cache
+3. **LRU** (Least Recently Used): Removes the item that hasn't been accessed for the longest time
+4. **MRU** (Most Recently Used): Removes the item that was most recently accessed
+
+### Testing
+The cache is tested using unit tests for the cache operations.
+The tests cover the basic functionality of the cache, including setting, getting, and deleting keys, as well as testing some eviction policies and TTLs.
+
+The unit and integration tests for the HTTP server is yet to be implemented.
+
+```bash
+# Run all tests
+make test
+```
 
 ## TODO:
 Cache:
@@ -81,7 +109,7 @@ Client:
 - [ ] Write integration tests for both the gRPC and HTTP servers (likely using the client)
 
 Misc:
-- [ ] Write a Dockerfile for the server and setup its usage (include docker-compose)
+- [x] Write a Dockerfile for the server and setup its usage (include docker-compose)
 - [x] Write a Makefile for automating the build and run process
-- [ ] Write a detailed documentation in README for the project with usage instructions of the client and servers.
+- [x] Write a detailed documentation in README for the project with usage instructions of the client and servers.
 
