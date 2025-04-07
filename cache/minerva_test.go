@@ -149,14 +149,24 @@ func TestEviction(t *testing.T) {
 	_, err := mc.Get("bkt1", "key1", Options{})
 	assert.Error(t, err, "expected error for evicted key")
 
-	val, err := mc.Get("bkt1", "key2", Options{})
-	assert.NoError(t, err)
-	assert.Equal(t, []byte("val2"), val, "expected key2 to be available")
+	// Before adding the support for evicting with the Oldest policy when the cache is at max capacity,
+	//val, err := mc.Get("bkt1", "key2", Options{})
+	//assert.NoError(t, err)
+	//assert.Equal(t, []byte("val2"), val, "expected key2 to be available")
+	//
+	//mc.Set("bkt1", "key5", []byte("val5"), Options{}) // This should evict "key2" as the least recently used key.
+	//_, err = mc.Get("bkt1", "key2", Options{})
+	//assert.Error(t, err, "expected error for evicted key")
 
-	mc.Set("bkt1", "key5", []byte("val5"), Options{}) // This should evict "key2" as the least recently used key.
-
+	// After adding the support for evicting with the Oldest policy when the cache is at max capacity,
+	// this should be an error because key2 should have been evicted.
 	_, err = mc.Get("bkt1", "key2", Options{})
 	assert.Error(t, err, "expected error for evicted key")
+
+	// Check if the other keys are still available.
+	val, err := mc.Get("bkt1", "key3", Options{})
+	assert.NoError(t, err, "expected no error for key3")
+	assert.Equal(t, []byte("val3"), val, "expected key3 to be available")
 }
 
 // TODO: Add more tests for different eviction policies and edge cases.

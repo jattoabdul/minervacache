@@ -114,6 +114,12 @@ func (mc *MinervaCache) Get(bucket string, key string, opts Options) ([]byte, er
 	mc.mutex.Lock()
 	defer mc.mutex.Unlock()
 
+	// The Get method is expected to use the Oldest eviction policy if the cache is full.
+	// TODO: Should we really be overriding the eviction policy in the options here when the capacity is full?
+	if mc.order.Len() >= mc.capacity {
+		mc.evict(OldestEvictionPolicy)
+	}
+
 	// Check if the bucket exists
 	mcb, ok := mc.buckets[bucket]
 	if !ok {
