@@ -207,13 +207,61 @@ func (mc *MinervaCache) deleteAndRemoveFromInsertOrder(el *list.Element) {
 }
 
 // startTTLCheck starts a goroutine that periodically checks for expired items in the cache.
-func (mc *MinervaCache) startTTLCheck() {}
+func (mc *MinervaCache) startTTLCheck() {
+	if mc.ttlCheckInterval <= 0 {
+		return // No TTL check needed
+	}
 
-// Stop terminates the TTL check goroutine and cleans up resources. NB: Get action always checks for expired items.
-func (mc *MinervaCache) Stop() {}
+	ticker := time.NewTicker(mc.ttlCheckInterval) // Maybe put this on the mc struct as a pointer to avoid creating a new one every time?
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				// TODO: Track the size of the cache and the number of expired items for metrics.
+				mc.checkExpiredItems()
+			case <-mc.stop:
+				ticker.Stop() // TODO: should I defer this at the top of the routine?
+				return
+			}
+		}
+	}()
+}
+
+// Stop terminates the TTL check goroutine and cleans up resources. NB: Get action always checks for expired items anyway.
+func (mc *MinervaCache) Stop() {
+	close(mc.stop) // Stop the TTL check goroutine
+
+	// TODO: Do I really want to do all this below cleanups? Maybe just stop the goroutine and let it clean up?
+	mc.mutex.Lock()
+	defer mc.mutex.Unlock()
+
+	// Clean up buckets and order list
+	for _, mcb := range mc.buckets {
+		for _, el := range mcb {
+			mc.order.Remove(el)
+		}
+	}
+	mc.buckets = make(map[string]map[string]*list.Element)
+	mc.order.Init() // Reset the order list
+}
 
 // checkExpiredItems checks for expired items in the cache and removes them.
-func (mc *MinervaCache) checkExpiredItems() {}
+func (mc *MinervaCache) checkExpiredItems() {
+	mc.mutex.Lock()
+	defer mc.mutex.Unlock()
+
+	// Iterate over all buckets and check for expired items.
+	// Although this is ran in a separate goroutine, it is still O(b*i). TODO: How to optimize this?
+	for _, mcb := range mc.buckets {
+		for _, el := range mcb {
+			item := el.Value.(*cacheItem)
+			if !item.expiresAt.IsZero() && time.Now().After(item.expiresAt) {
+				// Item is expired, remove it.
+				mc.deleteAndRemoveFromInsertOrder(el)
+			}
+		}
+	}
+}
 
 // getBucket returns the bucket for the given key. If the bucket doesn't exist, it creates a new one.
 func (mc *MinervaCache) getBucket(bucket string) map[string]*list.Element {
