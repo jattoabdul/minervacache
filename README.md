@@ -50,6 +50,9 @@ minervacache server --grpc
 
 #### Example Usage (With REPL)
 ```bash
+# Start the gRPC server
+minervacache server --grpc
+
 # Start the REPL client
 minervacache client
 
@@ -57,12 +60,26 @@ minervacache client
 Usage: set <bucket> <key> <value> [ttl_ms]
 
 > set bucket1 key1 value1
+Value set successfully
 
+> get bucket1 key1
+Value: value1
+
+> get bucket1 key2
+Error getting value: rpc error: code = Unknown desc = key not found
+
+> delete bucket1 key1
+Value deleted successfully
+
+> get bucket1 key1
+Error getting value: rpc error: code = Unknown desc = bucket not found
+
+> exit
 
 ```
 
 ### Docker
-You can build and run the server using Docker:
+You can build and run the HTTP server using Docker:
 ```bash
 # Build the Docker image
 make docker-build
