@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewMinervaCache(t *testing.T) {
-	mc := NewMinervaCache(10, 0)
+	mc := NewMinervaCache(10, 0, &mockMetrics{})
 	defer mc.Stop()
 
 	assert.NotNil(t, mc, "expected cache to be non-nil")
@@ -16,7 +16,7 @@ func TestNewMinervaCache(t *testing.T) {
 
 func TestMinervaCache_Set(t *testing.T) {
 	// Test the Set method of MinervaCache.
-	mc := NewMinervaCache(10, 0)
+	mc := NewMinervaCache(10, 0, &mockMetrics{})
 	defer mc.Stop()
 
 	// Set a value in the cache.
@@ -31,7 +31,7 @@ func TestMinervaCache_Set(t *testing.T) {
 
 func TestMinervaCache_Get(t *testing.T) {
 	// Test the Get method of MinervaCache.
-	mc := NewMinervaCache(10, 0)
+	mc := NewMinervaCache(10, 0, &mockMetrics{})
 	defer mc.Stop()
 
 	// Set a value in the cache.
@@ -46,7 +46,7 @@ func TestMinervaCache_Get(t *testing.T) {
 
 func TestMinervaCache_Delete(t *testing.T) {
 	// Test the Delete method of MinervaCache.
-	mc := NewMinervaCache(10, 0)
+	mc := NewMinervaCache(10, 0, &mockMetrics{})
 	defer mc.Stop()
 
 	// Set a value in the cache.
@@ -79,7 +79,7 @@ func TestMinervaCache_Delete(t *testing.T) {
 }
 
 func TestNoTTL(t *testing.T) {
-	mc := NewMinervaCache(10, 0)
+	mc := NewMinervaCache(10, 0, &mockMetrics{})
 	defer mc.Stop()
 
 	err := mc.Set("bkt1", "key1", []byte("val1"), Options{})
@@ -95,7 +95,7 @@ func TestNoTTL(t *testing.T) {
 
 func TestTTL(t *testing.T) {
 	ttlCheckInterval := 10 * time.Millisecond
-	mc := NewMinervaCache(10, ttlCheckInterval)
+	mc := NewMinervaCache(10, ttlCheckInterval, &mockMetrics{})
 	defer mc.Stop()
 
 	err := mc.Set("bkt1", "key1", []byte("val1"), Options{
@@ -116,7 +116,7 @@ func TestTTL(t *testing.T) {
 }
 
 func TestCapacity(t *testing.T) {
-	mc := NewMinervaCache(3, 0)
+	mc := NewMinervaCache(3, 0, &mockMetrics{})
 	defer mc.Stop()
 	err := mc.Set("bkt1", "key1", []byte("val1"), Options{})
 	assert.NoError(t, err)
@@ -137,7 +137,7 @@ func TestCapacity(t *testing.T) {
 
 func TestEviction(t *testing.T) {
 	// Test the default eviction policy by filling the cache and checking if the least recently used entry is evicted.
-	mc := NewMinervaCache(3, 0)
+	mc := NewMinervaCache(3, 0, &mockMetrics{})
 	defer mc.Stop()
 
 	mc.Set("bkt1", "key1", []byte("val1"), Options{})

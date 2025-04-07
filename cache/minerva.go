@@ -14,7 +14,8 @@ type MinervaCache struct {
 	capacity         int
 	ttlCheckInterval time.Duration
 	stop             chan struct{}
-	// TODO: stats/metrics tracking.
+	// metrics is used for tracking cache actions. Only hit, miss and size for now.
+	metrics MetricsHandler
 	// mutex locks all the buckets and the order list in the cache.
 	// We could use a RWMutex, but since we are using a single mutex for all operations,
 	// we don't need to worry about read/write locks. Especially since we perform write update operations like eviction
@@ -37,14 +38,14 @@ type cacheItem struct {
 	expiresAt time.Time
 }
 
-func NewMinervaCache(capacity int, ttlCheckInterval time.Duration) *MinervaCache {
+func NewMinervaCache(capacity int, ttlCheckInterval time.Duration, metrics MetricsHandler) *MinervaCache {
 	mc := &MinervaCache{
 		capacity:         capacity,
 		ttlCheckInterval: ttlCheckInterval,
 		stop:             make(chan struct{}),
 		buckets:          make(map[string]map[string]*list.Element),
 		order:            list.New(),
-		//TODO: metrics handler
+		metrics:          metrics,
 	}
 	// Start the TTL check (maybe in a separate goroutine?)
 	mc.startTTLCheck()
