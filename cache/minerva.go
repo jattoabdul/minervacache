@@ -124,14 +124,14 @@ func (mc *MinervaCache) Get(bucket string, key string, opts Options) ([]byte, er
 	// Check if the bucket exists
 	mcb, ok := mc.buckets[bucket]
 	if !ok {
-		// TODO: Track the bucket not found (miss) action for metrics.
+		mc.metrics.AddMiss() // TODO: maybe add a key notFound metric for this specifically?
 		return nil, ErrBucketNotFound
 	}
 
 	// Check if the key exists in the bucket
 	el, ok := mcb[key]
 	if !ok {
-		// TODO: Track the key not found (miss) action for metrics.
+		mc.metrics.AddMiss() // TODO: maybe add a key notFound metric for this specifically?
 		return nil, ErrKeyNotFound
 	}
 
@@ -139,8 +139,8 @@ func (mc *MinervaCache) Get(bucket string, key string, opts Options) ([]byte, er
 	item := el.Value.(*cacheItem)
 	if !item.expiresAt.IsZero() && time.Now().After(item.expiresAt) {
 		mc.deleteAndRemoveFromInsertOrder(el)
-		// TODO: Track the key expired item (miss) action for metrics.
-		return nil, ErrKeyExpired // Maybe just return key not found error?
+		mc.metrics.AddMiss() // TODO: maybe add a key expired metric for this specifically?
+		return nil, ErrKeyExpired
 	}
 
 	// Update the last access time for LRU/MRU policies.
@@ -148,7 +148,7 @@ func (mc *MinervaCache) Get(bucket string, key string, opts Options) ([]byte, er
 		mc.order.MoveToBack(el) // Move the element to the back of the list since it was accessed.
 	}
 
-	// TODO: Track the keyInBucket found (hit) action for metrics.
+	mc.metrics.AddHit() // Track the hit action for metrics.
 	return item.value, nil
 }
 
@@ -161,14 +161,14 @@ func (mc *MinervaCache) Delete(bucket string, key string) error {
 	// Check if the bucket exists
 	mcb, ok := mc.buckets[bucket]
 	if !ok {
-		// TODO: Track the bucket not found (miss) action for metrics.
+		mc.metrics.AddMiss() // TODO: maybe add a bucket notFound metric for this specifically?
 		return ErrBucketNotFound
 	}
 
 	// Check if the key exists in the bucket
 	el, ok := mcb[key]
 	if ok {
-		// TODO: Track the delete action for metrics.
+		// TODO: Track the delete action for metrics. Need to add this to the metrics handler.
 
 		// Remove the key from the bucket and update insertion order list. Remove bucket if empty as well.
 		mc.deleteAndRemoveFromInsertOrder(el)
@@ -176,7 +176,7 @@ func (mc *MinervaCache) Delete(bucket string, key string) error {
 		return nil
 	}
 
-	// TODO: Track the key not found (miss) action for metrics.
+	mc.metrics.AddMiss() // TODO: maybe add a key notFound metric for this specifically?
 	return ErrKeyNotFound
 }
 
@@ -195,7 +195,7 @@ func (mc *MinervaCache) evict(policy EvictionPolicy) {
 	}
 
 	mc.deleteAndRemoveFromInsertOrder(el)
-	// TODO: Track the eviction action for metrics.
+	// TODO: Track the eviction action for metrics. Need to add this to the metrics handler.
 }
 
 // deleteAndRemoveFromInsertOrder removes the key from the bucket and updates the insertion order list.
@@ -224,7 +224,7 @@ func (mc *MinervaCache) startTTLCheck() {
 		for {
 			select {
 			case <-ticker.C:
-				// TODO: Track the size of the cache and the number of expired items for metrics.
+				mc.metrics.SetSize(mc.order.Len()) // Update the size metric
 				mc.checkExpiredItems()
 			case <-mc.stop:
 				ticker.Stop() // TODO: should I defer this at the top of the routine?
