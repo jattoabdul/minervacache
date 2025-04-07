@@ -121,3 +121,10 @@ func (s *httpServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	//TODO: handle response marshalling to json, setting content type, formatting and correct status code separately.
 	w.Write([]byte("OK"))
 }
+
+//TODO: SendJSONResponse is a utility function to send JSON responses.
+// This will require marshalling the data to JSON and setting the content type etc.
+// func SendJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) {}
+
+// TODO: SendErrorResponse is a utility function to send error responses.
+// func SendErrorResponse(w http.ResponseWriter, statusCode int, message string) {}
