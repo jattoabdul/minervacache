@@ -28,8 +28,8 @@ func (n *mockMetrics) SetSize(size int) {}
 func (n *mockMetrics) AddHit()          {}
 func (n *mockMetrics) AddMiss()         {}
 
-// pmMetrics is a Prometheus implementation of the MetricsHandler interface.
-type pmMetrics struct {
+// PmMetrics is a Prometheus implementation of the MetricsHandler interface.
+type PmMetrics struct {
 	size *prometheus.GaugeVec
 	hit  *prometheus.CounterVec
 	miss *prometheus.CounterVec // Can be broken down into more granular metrics. TODO: Add more metrics if time permits.
@@ -37,8 +37,8 @@ type pmMetrics struct {
 
 // NewPmMetrics creates a new instance of pmMetrics with Prometheus metrics.
 // It registers the metrics with the Prometheus registry.
-func NewPmMetrics() *pmMetrics {
-	pm := &pmMetrics{
+func NewPmMetrics() *PmMetrics {
+	pm := &PmMetrics{
 		size: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "cache_size",
@@ -67,21 +67,21 @@ func NewPmMetrics() *pmMetrics {
 }
 
 // SetSize sets the size of the cache.
-func (pm *pmMetrics) SetSize(size int) {
+func (pm *PmMetrics) SetSize(size int) {
 	pm.size.WithLabelValues().Set(float64(size))
 }
 
 // AddHit increments the hit counter for the cache.
-func (pm *pmMetrics) AddHit() {
+func (pm *PmMetrics) AddHit() {
 	pm.hit.WithLabelValues().Inc()
 }
 
 // AddMiss increments the miss counter for the cache.
-func (pm *pmMetrics) AddMiss() {
+func (pm *PmMetrics) AddMiss() {
 	pm.miss.WithLabelValues().Inc()
 }
 
 // HTTPHandler returns an HTTP handler for exposing the metrics.
-func (pm *pmMetrics) HTTPHandler() http.Handler {
+func (pm *PmMetrics) HTTPHandler() http.Handler {
 	return promhttp.Handler()
 }
