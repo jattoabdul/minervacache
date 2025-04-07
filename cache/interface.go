@@ -25,8 +25,8 @@ const (
 
 	MaxCacheSize = 255 // Maximum number of keys the cache can hold
 
-	DefaultTTL = "0" // Default TTL ("0" means no expiration)
-	//DefaultCleanupInterval = 30 * time.Second // Default Cleanup Interval (should we have this?)
+	DefaultTTL             = "0"              // Default TTL ("0" means no expiration)
+	DefaultCleanupInterval = 30 * time.Second // Default Cleanup Interval (should we have this?)
 )
 
 type Options struct {

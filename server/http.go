@@ -16,9 +16,18 @@ type httpServer struct {
 	server  *http.Server
 }
 
+// NewHTTPServer creates a new HTTP server with the given cache and metrics exporter.
+// The server will be initialized in the Start method.
+func NewHTTPServer(cache cache.Cache, metrics cache.MetricsExporter) Server {
+	return &httpServer{
+		cache:   cache,
+		metrics: metrics,
+	}
+}
+
 // Start starts the HTTP server on the given address and port.
 // It initializes the server and registers the routes.
-func (s *httpServer) Start(addr string, port int) error {
+func (s *httpServer) Start(ctx context.Context, addr string, port int) error {
 	mux := http.NewServeMux()
 	// Register routes with middleware
 	mux.HandleFunc("GET /health", s.handleHealth)
@@ -39,11 +48,11 @@ func (s *httpServer) Start(addr string, port int) error {
 }
 
 // Stop gracefully shuts down the HTTP server.
-func (s *httpServer) Stop() error {
+func (s *httpServer) Stop(ctx context.Context) error {
 	if s.server == nil {
 		return nil
 	}
-	return s.server.Shutdown(context.Background())
+	return s.server.Shutdown(ctx)
 }
 
 // HTTP Middlewares decorator functions that wrap handlers to perform common tasks
