@@ -5,6 +5,52 @@ The cache is limited to 255 keys total and provides gRPC & HTTP API access to ma
 
 ## Usage:
 
+### HTTP Server
+```bash
+# Install to $GOPATH/bin ( you may need to restart your shell for this to take effect)
+make install
+
+# Start HTTP server on localhost:8080
+minervacache server
+```
+
+#### Endpoints
+- **Health Check**: `GET /health`
+- **Set**: `PUT /cache/<bucket>/<key>` (with optional query params for TTL and eviction policy)
+- **Get**: `GET /cache/<bucket>/<key>`
+- **Delete**: `DELETE /cache/<bucket>/<key>`
+- **Statistics**: `GET /stats` (returns cache statistics using Prometheus metrics)
+
+#### Example Usage (With curl)
+```bash
+# Health check
+curl -X GET http://localhost:8080/health
+
+# Set a key
+curl -X PUT http://localhost:8080/cache/bucket1/key1 -d "value1"
+
+# Set a key with TTL and eviction policy
+curl -X PUT "http://localhost:8080/cache/bucket1/key1?policy=lru&ttl=1s" -d "value1"
+
+# Get a key
+curl -X GET http://localhost:8080/cache/bucket1/key1
+
+# Delete a key
+curl -X DELETE http://localhost:8080/cache/bucket1/key1
+```
+
+### Docker
+You can build and run the server using Docker:
+```bash
+# Build the Docker image
+make docker-build
+# Run the Docker container to install the command line tool.
+make docker-run
+
+# Start HTTP server on localhost:8080
+minervacache server
+```
+
 ## Solution Approach
 
 
@@ -23,7 +69,7 @@ Server:
     - [x] Implement the statistics endpoint
     - [x] Implement the Performance metrics collection (Prometheus?)
     - [x] Implement the health check endpoint
-    - [ ] Implement the graceful shutdown
+    - [x] Implement the graceful shutdown
     - [ ] Write unit tests for the HTTP server
 - [ ] Implement the gRPC server
   - [ ] Implement the proto file for the cache operations (set, get, delete, stats)
